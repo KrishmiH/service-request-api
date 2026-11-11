@@ -57,4 +57,16 @@ class User extends Authenticatable
     {
         return $this->hasMany(ServiceRequest::class, 'assigned_to');
     }
+
+    // Comments written by this user
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    // Activities performed by this user
+    public function activitiesPerformed(): HasMany
+    {
+        return $this->hasMany(RequestActivity::class);
+    }
 }
