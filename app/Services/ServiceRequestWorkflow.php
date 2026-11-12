@@ -8,6 +8,7 @@ use App\Models\ServiceRequest;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use App\Notifications\ServiceRequestStatusNotification;
 
 class ServiceRequestWorkflow
 {
@@ -76,8 +77,11 @@ class ServiceRequestWorkflow
                 'metadata' => $metadata,
             ]);
 
+            $this->notifyRelevantUsers($request, $newStatus);
+            
             return $request->fresh();
         });
+        
     }
 
     /**
@@ -124,8 +128,68 @@ class ServiceRequestWorkflow
                 ],
             ]);
 
+            $this->notifyRelevantUsers($request, RequestStatus::ASSIGNED);
+
             return $request->fresh();
         });
+    }
+
+    private function notifyRelevantUsers(
+        ServiceRequest $request,
+        RequestStatus $status
+    ): void {
+        $request->loadMissing(['employee.manager', 'assignedUser']);
+
+        $recipient = match ($status) {
+            RequestStatus::SUBMITTED => $request->employee?->manager,
+
+            RequestStatus::APPROVED,
+            RequestStatus::REJECTED,
+            RequestStatus::RETURNED,
+            RequestStatus::IN_PROGRESS,
+            RequestStatus::COMPLETED => $request->employee,
+
+            RequestStatus::ASSIGNED => $request->assignedUser,
+
+            default => null,
+        };
+
+        if (!$recipient) {
+            return;
+        }
+
+        $message = match ($status) {
+            RequestStatus::SUBMITTED =>
+                'A service request has been submitted for your review.',
+
+            RequestStatus::APPROVED =>
+                'Your service request has been approved.',
+
+            RequestStatus::REJECTED =>
+                'Your service request has been rejected.',
+
+            RequestStatus::RETURNED =>
+                'Your service request has been returned for more details.',
+
+            RequestStatus::ASSIGNED =>
+                'A service request has been assigned to you.',
+
+            RequestStatus::IN_PROGRESS =>
+                'Work on your service request has started.',
+
+            RequestStatus::COMPLETED =>
+                'Your service request has been completed.',
+
+            default => 'Your service request status has changed.',
+        };
+
+        $recipient->notify(
+            new ServiceRequestStatusNotification(
+                $request->title,
+                $status->value,
+                $message
+            )
+        );
     }
 
 }
