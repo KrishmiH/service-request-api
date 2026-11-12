@@ -1,0 +1,470 @@
+{
+  "info": {
+    "name": "Service Request & Approval API",
+    "description": "Postman collection for the Laravel Service Request & Approval API.\n\nBase URL: {{baseUrl}} (default http://127.0.0.1:8000)\nAuthentication: Sanctum bearer token. Login as a seeded user, then use the returned token.\n\nSeeded accounts (password for all: password123):\n- Manager: manager@example.com\n- Employee 1: employee1@example.com\n- Employee 2: employee2@example.com\n- Operations: operations@example.com\n\nSet {{requestId}} to an existing request ID. For assignment, set {{operationsUserId}} to the ID of an Operations user.\n\nRequest status values: draft, submitted, approved, rejected, returned, assigned, in_progress, completed.\nExpected validation/workflow errors include 422; unauthorized actions return 403; unauthenticated requests return 401.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "requestId",
+      "value": "1"
+    },
+    {
+      "key": "operationsUserId",
+      "value": "4"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Employee\",\n  \"email\": \"new.employee@example.com\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"manager_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Creates an Employee account. The API assigns the employee role; do not send a role field."
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"employee1@example.com\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Login with one of the seeded accounts. Saves the returned Sanctum token to the collection variable."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 && pm.response.json().token) {",
+                  "    pm.collectionVariables.set('token', pm.response.json().token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Current user",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/me"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/logout",
+            "description": "Revokes the current access token."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Service Requests",
+      "item": [
+        {
+          "name": "List requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests?search=laptop&status=submitted&priority=high&category=IT Support&sort_by=created_at&sort_direction=desc",
+            "description": "All query parameters are optional. Remove or edit them to change the filters."
+          }
+        },
+        {
+          "name": "Create request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Laptop Repair\",\n  \"description\": \"My laptop is not starting properly.\",\n  \"category\": \"IT Support\",\n  \"priority\": \"high\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get request details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{requestId}}",
+            "description": "Includes employee, assignee, comments and activity history."
+          }
+        },
+        {
+          "name": "Update request",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{requestId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Laptop Repair - Updated\",\n  \"description\": \"The laptop does not power on.\",\n  \"category\": \"IT Support\",\n  \"priority\": \"medium\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Employee may update their own request while it is draft or returned."
+          }
+        },
+        {
+          "name": "Submit request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{requestId}}/submit",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Please review this request.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Employee submits their own draft or returned request."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Manager Approval",
+      "item": [
+        {
+          "name": "Approve request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{requestId}}/approve",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Approved. Please proceed.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Manager can approve a submitted request belonging to a direct report."
+          }
+        },
+        {
+          "name": "Reject request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{requestId}}/reject",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Rejected because the request does not meet the requirements.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Manager rejection requires a comment."
+          }
+        },
+        {
+          "name": "Return request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{requestId}}/return",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Please provide additional information.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Manager returns a submitted request for employee changes; comment is required."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Operations",
+      "item": [
+        {
+          "name": "Assign request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{requestId}}/assign",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assigned_to\": \"{{operationsUserId}}\",\n  \"comment\": \"Assigned to the operations team.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Operations assigns an approved request to an Operations user. Update operationsUserId to a valid Operations user ID."
+          }
+        },
+        {
+          "name": "Start request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{requestId}}/start",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Work has started.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Complete request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{requestId}}/complete",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Work completed successfully.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Comments",
+      "item": [
+        {
+          "name": "List comments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{requestId}}/comments"
+          }
+        },
+        {
+          "name": "Add comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/requests/{{requestId}}/comments",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"I have added the requested information.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Adds a comment and records the comment action in the request activity history."
+          }
+        }
+      ]
+    }
+  ]
+}
