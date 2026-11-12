@@ -14,8 +14,7 @@ class ServiceRequestStatusNotification extends Notification implements ShouldQue
         public string $requestTitle,
         public string $status,
         public string $message
-    ) {
-    }
+    ) {}
 
     public function via(object $notifiable): array
     {

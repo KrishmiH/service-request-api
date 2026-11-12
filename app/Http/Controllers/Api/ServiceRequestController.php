@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
-use App\Enums\UserRole;
 use App\Enums\RequestStatus;
-use App\Models\ServiceRequest;
+use App\Http\Controllers\Controller;
 use App\Models\RequestActivity;
+use App\Models\ServiceRequest;
+use App\Services\ServiceRequestWorkflow;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use App\Services\ServiceRequestWorkflow;
 
 class ServiceRequestController extends Controller
 {
     use AuthorizesRequests;
+
     /**
      * Display requests accessible to the authenticated user.
      */
@@ -44,33 +44,33 @@ class ServiceRequestController extends Controller
         } elseif ($user->role === 'operations') {
             $query->where(function ($q) use ($user) {
                 $q->where('status', 'approved')
-                ->orWhere('assigned_to', $user->id);
+                    ->orWhere('assigned_to', $user->id);
             });
         }
 
         // Search by title, description, or category.
-        if (!empty($validated['search'])) {
+        if (! empty($validated['search'])) {
             $search = $validated['search'];
 
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                ->orWhere('description', 'like', "%{$search}%")
-                ->orWhere('category', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('category', 'like', "%{$search}%");
             });
         }
 
         // Filter by status.
-        if (!empty($validated['status'])) {
+        if (! empty($validated['status'])) {
             $query->where('status', $validated['status']);
         }
 
         // Filter by priority.
-        if (!empty($validated['priority'])) {
+        if (! empty($validated['priority'])) {
             $query->where('priority', $validated['priority']);
         }
 
         // Filter by category.
-        if (!empty($validated['category'])) {
+        if (! empty($validated['category'])) {
             $query->where('category', $validated['category']);
         }
 
@@ -206,5 +206,4 @@ class ServiceRequestController extends Controller
             'data' => $updatedRequest,
         ]);
     }
-
 }

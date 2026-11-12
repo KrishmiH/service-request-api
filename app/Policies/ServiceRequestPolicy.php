@@ -66,11 +66,7 @@ class ServiceRequestPolicy
     public function submit(User $user, ServiceRequest $serviceRequest): bool
     {
         return $user->role === UserRole::EMPLOYEE->value
-            && $serviceRequest->employee_id === $user->id
-            && in_array($serviceRequest->status, [
-                RequestStatus::DRAFT->value,
-                RequestStatus::RETURNED->value,
-            ], true);
+            && $serviceRequest->employee_id === $user->id;
     }
 
     // Managers can approve submitted requests from direct reports.

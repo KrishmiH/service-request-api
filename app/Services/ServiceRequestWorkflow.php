@@ -6,9 +6,9 @@ use App\Enums\RequestStatus;
 use App\Models\RequestActivity;
 use App\Models\ServiceRequest;
 use App\Models\User;
+use App\Notifications\ServiceRequestStatusNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use App\Notifications\ServiceRequestStatusNotification;
 
 class ServiceRequestWorkflow
 {
@@ -54,7 +54,7 @@ class ServiceRequestWorkflow
             // Check whether the requested transition is valid.
             $allowedStatuses = self::TRANSITIONS[$oldStatus] ?? [];
 
-            if (!in_array($newStatus->value, $allowedStatuses, true)) {
+            if (! in_array($newStatus->value, $allowedStatuses, true)) {
                 throw ValidationException::withMessages([
                     'status' => [
                         "Cannot change request status from {$oldStatus} to {$newStatus->value}.",
@@ -78,10 +78,10 @@ class ServiceRequestWorkflow
             ]);
 
             $this->notifyRelevantUsers($request, $newStatus);
-            
+
             return $request->fresh();
         });
-        
+
     }
 
     /**
@@ -154,31 +154,24 @@ class ServiceRequestWorkflow
             default => null,
         };
 
-        if (!$recipient) {
+        if (! $recipient) {
             return;
         }
 
         $message = match ($status) {
-            RequestStatus::SUBMITTED =>
-                'A service request has been submitted for your review.',
+            RequestStatus::SUBMITTED => 'A service request has been submitted for your review.',
 
-            RequestStatus::APPROVED =>
-                'Your service request has been approved.',
+            RequestStatus::APPROVED => 'Your service request has been approved.',
 
-            RequestStatus::REJECTED =>
-                'Your service request has been rejected.',
+            RequestStatus::REJECTED => 'Your service request has been rejected.',
 
-            RequestStatus::RETURNED =>
-                'Your service request has been returned for more details.',
+            RequestStatus::RETURNED => 'Your service request has been returned for more details.',
 
-            RequestStatus::ASSIGNED =>
-                'A service request has been assigned to you.',
+            RequestStatus::ASSIGNED => 'A service request has been assigned to you.',
 
-            RequestStatus::IN_PROGRESS =>
-                'Work on your service request has started.',
+            RequestStatus::IN_PROGRESS => 'Work on your service request has started.',
 
-            RequestStatus::COMPLETED =>
-                'Your service request has been completed.',
+            RequestStatus::COMPLETED => 'Your service request has been completed.',
 
             default => 'Your service request status has changed.',
         };
@@ -191,5 +184,4 @@ class ServiceRequestWorkflow
             )
         );
     }
-
 }

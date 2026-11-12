@@ -1,11 +1,11 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\ServiceRequestController;
+use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\ManagerApprovalController;
 use App\Http\Controllers\Api\OperationsController;
-use App\Http\Controllers\Api\CommentController;
+use App\Http\Controllers\Api\ServiceRequestController;
+use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -37,7 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
         '/requests/{serviceRequest}/submit',
         [ServiceRequestController::class, 'submit']
     );
-    
+
     Route::post(
         '/requests/{serviceRequest}/assign',
         [OperationsController::class, 'assign']
@@ -52,7 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
         '/requests/{serviceRequest}/complete',
         [OperationsController::class, 'complete']
     );
-    
+
     Route::get(
         '/requests/{serviceRequest}/comments',
         [CommentController::class, 'index']
