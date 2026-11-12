@@ -100,8 +100,7 @@ class ServiceRequestPolicy
     public function start(User $user, ServiceRequest $serviceRequest): bool
     {
         return $user->role === UserRole::OPERATIONS->value
-            && $serviceRequest->assigned_to === $user->id
-            && $serviceRequest->status === RequestStatus::ASSIGNED->value;
+            && $serviceRequest->assigned_to === $user->id;
     }
 
     // Only the assigned Operations user can complete the work.
