@@ -79,4 +79,53 @@ class ServiceRequestWorkflow
             return $request->fresh();
         });
     }
+
+    /**
+     * Assign a service request to an Operations user.
+     */
+    public function assign(
+        ServiceRequest $serviceRequest,
+        User $actor,
+        User $assignee,
+        ?string $comment = null
+    ): ServiceRequest {
+        return DB::transaction(function () use (
+            $serviceRequest,
+            $actor,
+            $assignee,
+            $comment
+        ) {
+            $request = ServiceRequest::query()
+                ->lockForUpdate()
+                ->findOrFail($serviceRequest->id);
+
+            // Only approved requests can be assigned
+            if ($request->status !== RequestStatus::APPROVED->value) {
+                throw ValidationException::withMessages([
+                    'status' => ['Only approved requests can be assigned.'],
+                ]);
+            }
+
+            // Set the assigned Operations user and change status
+            $request->assigned_to = $assignee->id;
+            $request->status = RequestStatus::ASSIGNED->value;
+            $request->save();
+
+            // Record the assignment in the activity history
+            RequestActivity::create([
+                'service_request_id' => $request->id,
+                'user_id' => $actor->id,
+                'action' => 'assigned',
+                'from_status' => RequestStatus::APPROVED->value,
+                'to_status' => RequestStatus::ASSIGNED->value,
+                'comment' => $comment,
+                'metadata' => [
+                    'assigned_to' => $assignee->id,
+                ],
+            ]);
+
+            return $request->fresh();
+        });
+    }
+
 }
